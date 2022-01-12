@@ -287,7 +287,7 @@ void onReceive(int packetSize) {
     outgoing+=uidString ;
     incomingLength = outgoing.length();
 
-    Serial.println(outgoing);
+    Serial.println(outgoing);//adf
     LoRa.beginPacket();
     //int ack =12345678;
     LoRa.write(ackF);
