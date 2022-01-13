@@ -283,10 +283,11 @@ void onReceive(int packetSize) {
     Receive_GPS_Data();
 
     finish = 0; pos_cnt = 0;
-    outgoing = "Lat " + String(lat) + " " + "Lg " + String(lg)+"RFID NO: ";
-    outgoing+=uidString ;
+    outgoing ="Lat " + String(lat) + " " + "Lg " + String(lg);
+    //outgoing+="hello How Are you my Name Is Mohit Kumar Chaniyal";
+    String msg=" RID"+uidString;
     incomingLength = outgoing.length();
-
+    incomingLength+=msg.length();
     Serial.println(outgoing);//adf
     LoRa.beginPacket();
     //int ack =12345678;
@@ -295,7 +296,8 @@ void onReceive(int packetSize) {
     LoRa.write(sender);             // add sender address
     // LoRa.write(incomingMsgId);                 // add message ID
     LoRa.write(incomingLength);        // add payload length
-    LoRa.print(outgoing);                 // add payload
+    LoRa.print(outgoing);// add payload
+    LoRa.print(msg);
     LoRa.endPacket();
     Serial.println("I received");
 
@@ -324,7 +326,6 @@ void onReceive(int packetSize) {
 /************************************************************************************
   Function    : Receive_GPS_Data()
   Description : finding Latitudse and longitude from GPRMC message
-
 ************************************************************************************/
 void Receive_GPS_Data()
 {
@@ -392,7 +393,7 @@ void readRFID()
     Serial.println("Scanned PICC's UID:");
     printDec(rfid.uid.uidByte, rfid.uid.size);
 
-    uidString = String(rfid.uid.uidByte[0])+" "+String(rfid.uid.uidByte[1])+" "+String(rfid.uid.uidByte[2])+ " "+String(rfid.uid.uidByte[3]);
+    uidString = " "+String(rfid.uid.uidByte[0]);//+" "+String(rfid.uid.uidByte[1])+" "+String(rfid.uid.uidByte[2])+ " "+String(rfid.uid.uidByte[3]);
     
     printUID();
 
