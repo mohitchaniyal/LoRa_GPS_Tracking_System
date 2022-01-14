@@ -21,12 +21,6 @@ SoftwareSerial mySerial(A0, A1); // RX, TX
 const int csPin = 10;          // LoRa radio chip select
 const int resetPin = 9;       // LoRa radio reset
 const int irqPin = 1;         // change for your board; must be a hardware interrupt pin
-const int led1 = 4;
-const int led2 = 5;
-const int led3 = 6;
-const int led4 = 7;
-const int led5 = 8;
-
 
 int Gpsdata;             // for incoming serial data
 unsigned int finish = 0; // indicate end of message
@@ -35,12 +29,10 @@ unsigned int lat_cnt = 0; // latitude data counter
 unsigned int log_cnt = 0; // longitude data counter
 unsigned int flg    = 0; // GPS flag
 unsigned int com_cnt = 0; // comma counter
-char lat[20];            // latitude array
-char lg[20];             // longitude array
+char lat[10];            // latitude array original=20
+char lg[10];             // longitude array original=20
 
 void Receive_GPS_Data();
-
-
 float t ;
 String outgoing;              // outgoing message
 int recipient;
@@ -52,8 +44,7 @@ long lastSendTime = 0;        // last send time
 int interval = 2000;          // interval between sends
 byte sender;
 bool recFlag = false;
-
-
+byte incomingLength ;
 int recipientlast;
 byte senderlast;
 
@@ -62,16 +53,7 @@ void setup() {
   Serial.begin(9600);                   // initialize serial
   mySerial.begin(9600);
 
-  // while (!Serial);
-  pinMode(led1, OUTPUT);
-  pinMode(led2, OUTPUT);
-  pinMode(led3, OUTPUT);
-  pinMode(led4, OUTPUT);
-  pinMode(led5, OUTPUT);
-
   Serial.println("LoRa Duplex Node A");
-
-  // override the default CS, reset, and IRQ pins (optional)
   LoRa.setPins(csPin, resetPin, irqPin);// set CS, reset, IRQ pin
 
   if (!LoRa.begin(433E6)) {             // initialize ratio at 915 MHz
@@ -80,7 +62,7 @@ void setup() {
   }
   SPI.begin(); // Init SPI bus
   rfid.PCD_Init();
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3c);  // initialize with the I2C addr 0x3D (for the 128x64)
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3c);
 
   // Clear the buffer.
   display.clearDisplay();
@@ -88,7 +70,7 @@ void setup() {
   display.setTextColor(WHITE); // or BLACK);
   display.setTextSize(2);
   display.setCursor(10,0); 
-  display.print("RFID Lock");
+  display.print("Scan Now");
   display.display();
   // Serial.println("LoRa init succeeded.");
 }
@@ -100,87 +82,46 @@ void loop() {
   if(  rfid.PICC_IsNewCardPresent())
   {
       readRFID();
+      send_RFID();
+      delay(50);
   }
   delay(100);
   onReceive(LoRa.parsePacket());
-
   
-
+  send_GPS_Data();
 
 }
 
-
-
-
-
-void Rssi() {
-  int x = map(LoRa.packetRssi(), -25, -130, 255, 0);
-
-  if (x > 204) {
-    digitalWrite(led1, LOW);
-    digitalWrite(led2, LOW);
-    digitalWrite(led3, LOW);
-    digitalWrite(led4, LOW);
-    digitalWrite(led5, LOW);
-
-  }
-  else if ((x <= 204) && (x > 153)) {
-
-    digitalWrite(led1, HIGH);
-    digitalWrite(led2, LOW);
-    digitalWrite(led3, LOW);
-    digitalWrite(led4, LOW);
-    digitalWrite(led5, LOW);
-
-  }
-  else if ((x <= 153) && (x > 102)) {
-
-    digitalWrite(led1, HIGH);
-    digitalWrite(led2, HIGH);
-    digitalWrite(led3, LOW);
-    digitalWrite(led4, LOW);
-    digitalWrite(led5, LOW);
-
-  }
-  else if ((x <= 102) && (x > 51)) {
-
-    digitalWrite(led1, HIGH);
-    digitalWrite(led2, HIGH);
-    digitalWrite(led3, HIGH);
-    digitalWrite(led4, LOW);
-    digitalWrite(led5, LOW);
-
-  }
-  else if (x <= 51) {
-
-    digitalWrite(led1, HIGH);
-    digitalWrite(led2, HIGH);
-    digitalWrite(led3, HIGH);
-    digitalWrite(led4, HIGH);
-    digitalWrite(led5, LOW);
-
-  }
-}
-
-
-
-void sendMessage(String outgoing ) {
-  LoRa.beginPacket();                   // start packet
-
-
+void  send_GPS_Data(){
+  Receive_GPS_Data();
+  finish = 0; pos_cnt = 0;
+  outgoing =String("A1 ")+"Lat " + String(lat) + " " + "Lg " + String(lg);
+  incomingLength = outgoing.length();
+  Serial.println(outgoing);
+  LoRa.beginPacket();
+    //int ack =12345678;
+  LoRa.write(ackF);
   LoRa.write(destination);              // add destination address
   LoRa.write(localAddress);             // add sender address
-  LoRa.write(msgCount);                 // add message ID
-  LoRa.write(outgoing.length());        // add payload length
-  LoRa.print(outgoing);                 // add payload
-  LoRa.endPacket();                     // finish packet and send it
-  msgCount++;                           // increment message ID
+    // LoRa.write(incomingMsgId);                 // add message ID
+  LoRa.write(incomingLength);        // add payload length
+  LoRa.print(outgoing);// add payload
+  LoRa.endPacket();
 }
-
-
-
-
-
+void send_RFID() {
+  outgoing=String("A1 ")+" RFID"+uidString;
+  incomingLength=outgoing.length();
+  Serial.println(outgoing);//adf
+  LoRa.beginPacket();
+    //int ack =12345678;
+  LoRa.write(ackF);
+  LoRa.write(destination);              // add destination address
+  LoRa.write(localAddress);             // add sender address
+    // LoRa.write(incomingMsgId);                 // add message ID
+  LoRa.write(incomingLength);        // add payload length
+  LoRa.print(outgoing);
+  LoRa.endPacket();
+}
 
 
 void onReceive(int packetSize) {
@@ -189,11 +130,6 @@ void onReceive(int packetSize) {
     recFlag = false;
 
     Serial.println("wait for response over");
-    digitalWrite(led1, HIGH);
-    digitalWrite(led2, HIGH);
-    digitalWrite(led3, HIGH);
-    digitalWrite(led4, HIGH);
-    digitalWrite(led5, HIGH);
     return;
 
 
@@ -201,7 +137,6 @@ void onReceive(int packetSize) {
 
   if (packetSize == 0) return;
   Serial.println("received");
-  Rssi();
   if (recFlag == true) {
 
 
@@ -255,11 +190,10 @@ void onReceive(int packetSize) {
     incoming += (char)LoRa.read();
   }
 
-  if (incomingLength != incoming.length()) {   // check length for error
+  if (incomingLength != incoming.length()) {
     Serial.println("error: message length does not match length");
     recFlag = false;
     return;
-    // skip rest of function
   }
 
   // if the recipient isn't this device or broadcast,
@@ -350,12 +284,12 @@ void Receive_GPS_Data()
         flg = 0;
       }
 
-      if (com_cnt == 3 && flg == 1) {
+      if (com_cnt == 3 && flg == 1) {     //com_cnt==3
         lat[lat_cnt++] =  Gpsdata;         // latitude
         flg = 0;
       }
 
-      if (com_cnt == 5 && flg == 1) {
+      if (com_cnt == 5 && flg == 1) {     //com_cnt==5
         lg[log_cnt++] =  Gpsdata;         // Longitude
         flg = 0;
       }
@@ -393,30 +327,8 @@ void readRFID()
     Serial.println("Scanned PICC's UID:");
     printDec(rfid.uid.uidByte, rfid.uid.size);
 
-    uidString = " "+String(rfid.uid.uidByte[0]);//+" "+String(rfid.uid.uidByte[1])+" "+String(rfid.uid.uidByte[2])+ " "+String(rfid.uid.uidByte[3]);
-    
+    uidString = " "+String(rfid.uid.uidByte[2])+" "+String(rfid.uid.uidByte[3]);//+" "+String(rfid.uid.uidByte[2])+ " "+String(rfid.uid.uidByte[3]);
     printUID();
-
-    int i = 0;
-    boolean match = true;
-    while(i<rfid.uid.size)
-    {
-      if(!(rfid.uid.uidByte[i] == code[i]))
-      {
-           match = false;
-      }
-      i++;
-    }
-
-    if(match)
-    {
-      Serial.println("\nI know this card!");
-      printUnlockMessage();
-    }else
-    {
-      Serial.println("\nUnknown Card");
-    }
-
 
     // Halt PICC
   rfid.PICC_HaltA();
@@ -452,31 +364,4 @@ void printDec(byte *buffer, byte bufferSize) {
     display.display();
   }
 
-  void printUnlockMessage()
-  {
-    display.display();
-    display.setTextColor(BLACK); // or BLACK);
-    display.setTextSize(2);
-    display.setCursor(10,0); 
-    display.print("RFID Lock");
-    display.display();
-    
-    display.setTextColor(WHITE); // or BLACK);
-    display.setTextSize(2);
-    display.setCursor(10,0); 
-    display.print("Unlocked");
-    display.display();
-    
-    delay(2000);
-    
-    display.setTextColor(BLACK); // or BLACK);
-    display.setTextSize(2);
-    display.setCursor(10,0); 
-    display.print("Unlocked");
-
-    display.setTextColor(WHITE); // or BLACK);
-    display.setTextSize(2);
-    display.setCursor(10,0); 
-    display.print("RFID Lock");
-    display.display();
-  }
+ 
