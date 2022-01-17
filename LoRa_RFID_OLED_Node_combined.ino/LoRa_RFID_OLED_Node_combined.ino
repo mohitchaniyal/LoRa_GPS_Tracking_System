@@ -14,7 +14,7 @@ MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the class
 MFRC522::MIFARE_Key key; 
 int code[] = {69,141,8,136}; //This is the stored UID
 int codeRead = 0;
-String uidString;
+String uidString="";
 
 SoftwareSerial mySerial(A0, A1); // RX, TX
 
@@ -41,7 +41,9 @@ byte localAddress = 0xA1;     // address of this device
 byte destination = 0xFF;      // destination to send to
 byte ackF = 0xF1;
 long lastSendTime = 0;        // last send time
+long lastSendTime_gps=0;
 int interval = 2000;          // interval between sends
+int gps_interval=20000;
 byte sender;
 bool recFlag = false;
 byte incomingLength ;
@@ -79,23 +81,26 @@ void setup() {
 
 
 void loop() {
+  onReceive(LoRa.parsePacket());
   if(  rfid.PICC_IsNewCardPresent())
   {
       readRFID();
-      send_RFID();
-      delay(50);
+      if (uidString!="");
+        send_RFID();
+      
   }
-  delay(100);
-  onReceive(LoRa.parsePacket());
   
-  send_GPS_Data();
+  if (millis() - lastSendTime_gps > gps_interval){
+    send_GPS_Data();
+    lastSendTime_gps=millis();
+    }
 
 }
 
 void  send_GPS_Data(){
   Receive_GPS_Data();
   finish = 0; pos_cnt = 0;
-  outgoing =String("A1 ")+"Lat " + String(lat) + " " + "Lg " + String(lg);
+  outgoing ="GPS  Lat  "+ String(lat) + " " + "Lg:" + String(lg);
   incomingLength = outgoing.length();
   Serial.println(outgoing);
   LoRa.beginPacket();
@@ -109,7 +114,7 @@ void  send_GPS_Data(){
   LoRa.endPacket();
 }
 void send_RFID() {
-  outgoing=String("A1 ")+" RFID"+uidString;
+  outgoing="RFID"+uidString;
   incomingLength=outgoing.length();
   Serial.println(outgoing);//adf
   LoRa.beginPacket();
@@ -121,19 +126,11 @@ void send_RFID() {
   LoRa.write(incomingLength);        // add payload length
   LoRa.print(outgoing);
   LoRa.endPacket();
+  uidString="";
 }
 
 
 void onReceive(int packetSize) {
-
-  if ((millis() - lastSendTime > interval) && (recFlag == true)) {
-    recFlag = false;
-
-    Serial.println("wait for response over");
-    return;
-
-
-  }
 
   if (packetSize == 0) return;
   Serial.println("received");
@@ -214,42 +211,46 @@ void onReceive(int packetSize) {
   }
   else if (recipient == localAddress) {
 
-    Receive_GPS_Data();
-
-    finish = 0; pos_cnt = 0;
-    outgoing ="Lat " + String(lat) + " " + "Lg " + String(lg);
-    //outgoing+="hello How Are you my Name Is Mohit Kumar Chaniyal";
-    String msg=" RID"+uidString;
-    incomingLength = outgoing.length();
-    incomingLength+=msg.length();
-    Serial.println(outgoing);//adf
-    LoRa.beginPacket();
-    //int ack =12345678;
-    LoRa.write(ackF);
-    LoRa.write(recipient);              // add destination address
-    LoRa.write(sender);             // add sender address
-    // LoRa.write(incomingMsgId);                 // add message ID
-    LoRa.write(incomingLength);        // add payload length
-    LoRa.print(outgoing);// add payload
-    LoRa.print(msg);
-    LoRa.endPacket();
-    Serial.println("I received");
-
+//    Receive_GPS_Data();
+//
+//    finish = 0; pos_cnt = 0;
+//    outgoing ="Lat " + String(lat) + " " + "Lg " + String(lg);
+//    //outgoing+="hello How Are you my Name Is Mohit Kumar Chaniyal";
+//    String msg=" RID"+uidString;
+//    incomingLength = outgoing.length();
+//    incomingLength+=msg.length();
+//    Serial.println(outgoing);//adf
+//    LoRa.beginPacket();
+//    //int ack =12345678;
+//    LoRa.write(ackF);
+//    LoRa.write(recipient);              // add destination address
+//    LoRa.write(sender);             // add sender address
+//    // LoRa.write(incomingMsgId);                 // add message ID
+//    LoRa.write(incomingLength);        // add payload length
+//    LoRa.print(outgoing);// add payload
+//    LoRa.print(msg);
+//    LoRa.endPacket();
+//    Serial.println("I received");
+      clearUID("Sanning");
+      printUID(String(incoming));
+      
+      Serial.println("Reply from: 0x"+String(sender,HEX)+" " + String(incoming));
+      
 
 
 
   }
 
-  // if message is for this device, or broadcast, print details:
-  Serial.println("Received from: 0x" + String(sender, HEX));
-  Serial.println("Sent to: 0x" + String(recipient, HEX));
-  // Serial.println("Message ID: " + String(incomingMsgId));
-  //  Serial.println("Message length: " + String(incomingLength));
-  Serial.println("Message: " + incoming);
-  Serial.println("RSSI: " + String(LoRa.packetRssi()));
-
-  Serial.println("Snr: " + String(LoRa.packetSnr()));
-  Serial.println();
+//  // if message is for this device, or broadcast, print details:
+//  Serial.println("Received from: 0x" + String(sender, HEX));
+//  Serial.println("Sent to: 0x" + String(recipient, HEX));
+//  // Serial.println("Message ID: " + String(incomingMsgId));
+//  //  Serial.println("Message length: " + String(incomingLength));
+//  Serial.println("Message: " + incoming);
+//  Serial.println("RSSI: " + String(LoRa.packetRssi()));
+//
+//  Serial.println("Snr: " + String(LoRa.packetSnr()));
+//  Serial.println();
 
 
 
@@ -310,9 +311,9 @@ void readRFID()
 {
   
   rfid.PICC_ReadCardSerial();
-  Serial.print(F("\nPICC type: "));
+  //Serial.print(F("\nPICC type: "));
   MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
-  Serial.println(rfid.PICC_GetTypeName(piccType));
+  //Serial.println(rfid.PICC_GetTypeName(piccType));
 
   // Check is the PICC of Classic MIFARE type
   if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI &&  
@@ -322,13 +323,13 @@ void readRFID()
     return;
   }
 
-    clearUID();
+    clearUID("Scanning");
    
-    Serial.println("Scanned PICC's UID:");
-    printDec(rfid.uid.uidByte, rfid.uid.size);
+    //Serial.println("Scanned PICC's UID:");
+    //printDec(rfid.uid.uidByte, rfid.uid.size);
 
     uidString = " "+String(rfid.uid.uidByte[2])+" "+String(rfid.uid.uidByte[3]);//+" "+String(rfid.uid.uidByte[2])+ " "+String(rfid.uid.uidByte[3]);
-    printUID();
+    printUID(uidString);
 
     // Halt PICC
   rfid.PICC_HaltA();
@@ -337,31 +338,34 @@ void readRFID()
   rfid.PCD_StopCrypto1();
 }
 
-void printDec(byte *buffer, byte bufferSize) {
-  for (byte i = 0; i < bufferSize; i++) {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], DEC);
-  }
-}
+//void printDec(byte *buffer, byte bufferSize) {
+ // for (byte i = 0; i < bufferSize; i++) {
+    //Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    //Serial.print(buffer[i], DEC);
+ // }
+//}
 
-  void clearUID()
+  void clearUID(String text)
   {
-    display.setTextColor(BLACK); // or BLACK);
-    display.setTextSize(1);
-    display.setCursor(30,20); 
-    display.print(uidString);
+    display.clearDisplay();
+    display.display();
+    display.setTextColor(WHITE); // or BLACK);
+    display.setTextSize(2);
+    display.setCursor(10,0); 
+    display.print(text);
     display.display();
   }
 
-  void printUID()
+  void printUID(String text)
   {
     display.setTextColor(WHITE); // or BLACK);
     display.setTextSize(1);
     display.setCursor(0,20); 
     display.print("UID: ");
     display.setCursor(30,20); 
-    display.print(uidString);
+    display.print(text);
     display.display();
   }
+  
 
  
