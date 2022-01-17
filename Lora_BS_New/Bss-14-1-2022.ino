@@ -36,6 +36,33 @@ void setup() {
     while (true);                       // if failed, do nothing
   }
 
+    byte incomingLength = LoRa.read();    // incoming msg length
+
+    String incoming = "";
+
+    while (LoRa.available()) {
+      incoming += (char)LoRa.read();
+    }
+
+    if (incomingLength != incoming.length()) {   // check length for error
+      Serial.println("error: message length does not match length");
+      sent = false;
+      return;
+      // skip rest of function
+    }
+    data +=incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+    // if message is for this device, or broadcast, print details:
+    //    Serial.println("Received from: 0x" + String(sender, HEX));
+    //    Serial.println("Sent to: 0x" + String(recipient, HEX));
+    //    Serial.println("Message length: " + String(incomingLength));
+    //    Serial.println("Message: " + incoming);
+    //    Serial.println("RSSI: " + String(LoRa.packetRssi()));
+    //    Serial.println("Snr: " + String(LoRa.packetSnr()));
+
+    Serial.println(data);
+    data="";
+    
+    return;
   //Serial.println("LoRa init succeeded.");
 }
 
@@ -45,16 +72,19 @@ void setup() {
 
 void loop() {
     onReceive(LoRa.parsePacket());
+    
+    
   }
 
 
 
 
 
-void sendMessage() {
+void sendMessage(String outgoing) {
   LoRa.beginPacket();                   // start packet
-  outgoing = "data";
+  
   //LoRa.write(destination);              // add destination address
+  LoRa.write(NodeID[1]);
   LoRa.write(localAddress);             // add sender address
   //LoRa.write(msgCount);                 // add message ID
   LoRa.write(outgoing.length());        // add payload length
@@ -88,7 +118,7 @@ void onReceive(int packetSize) {
       return;
       // skip rest of function
     }
-    data +=incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+    data +=String(sender,HEX)+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
     // if message is for this device, or broadcast, print details:
     //    Serial.println("Received from: 0x" + String(sender, HEX));
     //    Serial.println("Sent to: 0x" + String(recipient, HEX));
@@ -99,8 +129,34 @@ void onReceive(int packetSize) {
 
     Serial.println(data);
     data="";
+    delay(10);
+    String Header=split_String(incoming,' ',0);
+    Serial.println(Header);
+    if (Header=="GPS"){
+      sendMessage("I Recieved GPS Packet");
+    }
+    else if (Header=="RFID"){
+      sendMessage("Mohit Sonesh");
+    }
+    
     return;
   }
   else return;
 
+}
+String split_String(String data, char separator, int index)
+{
+    int found = 0;
+    int strIndex[] = { 0, -1 };
+    int maxIndex = data.length() - 1;
+
+    for (int i = 0; i <= maxIndex && found <= index; i++) {
+        if (data.charAt(i) == separator || i == maxIndex) {
+            found++;
+            strIndex[0] = strIndex[1] + 1;
+            strIndex[1] = (i == maxIndex) ? i+1 : i;
+        }
+    }
+    
+    return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
