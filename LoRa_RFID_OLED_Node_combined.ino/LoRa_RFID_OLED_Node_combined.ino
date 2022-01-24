@@ -210,50 +210,12 @@ void onReceive(int packetSize) {
     return;                             // skip rest of function
   }
   else if (recipient == localAddress) {
-
-//    Receive_GPS_Data();
-//
-//    finish = 0; pos_cnt = 0;
-//    outgoing ="Lat " + String(lat) + " " + "Lg " + String(lg);
-//    //outgoing+="hello How Are you my Name Is Mohit Kumar Chaniyal";
-//    String msg=" RID"+uidString;
-//    incomingLength = outgoing.length();
-//    incomingLength+=msg.length();
-//    Serial.println(outgoing);//adf
-//    LoRa.beginPacket();
-//    //int ack =12345678;
-//    LoRa.write(ackF);
-//    LoRa.write(recipient);              // add destination address
-//    LoRa.write(sender);             // add sender address
-//    // LoRa.write(incomingMsgId);                 // add message ID
-//    LoRa.write(incomingLength);        // add payload length
-//    LoRa.print(outgoing);// add payload
-//    LoRa.print(msg);
-//    LoRa.endPacket();
-//    Serial.println("I received");
-      clearUID("Sanning");
+      clearUID("UserName",10,0);
       printUID(String(incoming));
       
       Serial.println("Reply from: 0x"+String(sender,HEX)+" " + String(incoming));
-      
-
-
 
   }
-
-//  // if message is for this device, or broadcast, print details:
-//  Serial.println("Received from: 0x" + String(sender, HEX));
-//  Serial.println("Sent to: 0x" + String(recipient, HEX));
-//  // Serial.println("Message ID: " + String(incomingMsgId));
-//  //  Serial.println("Message length: " + String(incomingLength));
-//  Serial.println("Message: " + incoming);
-//  Serial.println("RSSI: " + String(LoRa.packetRssi()));
-//
-//  Serial.println("Snr: " + String(LoRa.packetSnr()));
-//  Serial.println();
-
-
-
 }
 
 
@@ -323,13 +285,13 @@ void readRFID()
     return;
   }
 
-    clearUID("Scanning");
+    clearUID("Scanning",10,0);
    
     //Serial.println("Scanned PICC's UID:");
     //printDec(rfid.uid.uidByte, rfid.uid.size);
 
     uidString = " "+String(rfid.uid.uidByte[2])+" "+String(rfid.uid.uidByte[3]);//+" "+String(rfid.uid.uidByte[2])+ " "+String(rfid.uid.uidByte[3]);
-    printUID(uidString);
+    //printUID(uidString);
 
     // Halt PICC
   rfid.PICC_HaltA();
@@ -345,13 +307,13 @@ void readRFID()
  // }
 //}
 
-  void clearUID(String text)
+  void clearUID(String text,int x,int y)
   {
     display.clearDisplay();
     display.display();
     display.setTextColor(WHITE); // or BLACK);
     display.setTextSize(2);
-    display.setCursor(10,0); 
+    display.setCursor(x,y); 
     display.print(text);
     display.display();
   }
@@ -360,12 +322,7 @@ void readRFID()
   {
     display.setTextColor(WHITE); // or BLACK);
     display.setTextSize(1);
-    display.setCursor(0,20); 
-    display.print("UID: ");
     display.setCursor(30,20); 
     display.print(text);
     display.display();
   }
-  
-
- 
