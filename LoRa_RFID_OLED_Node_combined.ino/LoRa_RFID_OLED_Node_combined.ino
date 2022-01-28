@@ -37,7 +37,7 @@ float t ;
 String outgoing;              // outgoing message
 int recipient;
 byte msgCount = 0;            // count of outgoing messages
-byte localAddress = 0xA1;     // address of this device
+byte localAddress = 0xA2;     // address of this device
 byte destination = 0xFF;      // destination to send to
 byte ackF = 0xF1;
 long lastSendTime = 0;        // last send time
