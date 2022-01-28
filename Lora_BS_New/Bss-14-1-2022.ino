@@ -17,7 +17,8 @@ byte ackF = 0xF1;
 byte NodeID[22] = {0x01, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7};
 bool sent = false;
 bool waiting = false;
-
+byte sender;
+int idno;
 
 
 
@@ -51,14 +52,6 @@ void setup() {
       // skip rest of function
     }
     data +=incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
-    // if message is for this device, or broadcast, print details:
-    //    Serial.println("Received from: 0x" + String(sender, HEX));
-    //    Serial.println("Sent to: 0x" + String(recipient, HEX));
-    //    Serial.println("Message length: " + String(incomingLength));
-    //    Serial.println("Message: " + incoming);
-    //    Serial.println("RSSI: " + String(LoRa.packetRssi()));
-    //    Serial.println("Snr: " + String(LoRa.packetSnr()));
-
     Serial.println(data);
     data="";
     
@@ -82,9 +75,8 @@ void loop() {
 
 void sendMessage(String outgoing) {
   LoRa.beginPacket();                   // start packet
-  
   //LoRa.write(destination);              // add destination address
-  LoRa.write(NodeID[1]);
+  LoRa.write(NodeID[idno]);
   LoRa.write(localAddress);             // add sender address
   //LoRa.write(msgCount);                 // add message ID
   LoRa.write(outgoing.length());        // add payload length
@@ -102,7 +94,7 @@ void onReceive(int packetSize) {
     // read packet header bytes:
     // Serial.println("Correct Node");
     int recipient = LoRa.read();          // recipient address
-    byte sender = LoRa.read();            // sender address
+    sender = LoRa.read();            // sender address
     // byte incomingMsgId = LoRa.read();     // incoming msg ID
     byte incomingLength = LoRa.read();    // incoming msg length
 
@@ -118,25 +110,43 @@ void onReceive(int packetSize) {
       return;
       // skip rest of function
     }
-    data +=String(sender,HEX)+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
-    // if message is for this device, or broadcast, print details:
-    //    Serial.println("Received from: 0x" + String(sender, HEX));
-    //    Serial.println("Sent to: 0x" + String(recipient, HEX));
-    //    Serial.println("Message length: " + String(incomingLength));
-    //    Serial.println("Message: " + incoming);
-    //    Serial.println("RSSI: " + String(LoRa.packetRssi()));
-    //    Serial.println("Snr: " + String(LoRa.packetSnr()));
-
+    String node_name=String(sender,HEX);
+    data +=node_name+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+    if (node_name=="a1"){
+      idno=1;
+      }
+    else if (node_name=="a2"){
+      idno=2;
+      }
+    else if (node_name=="a3"){
+      idno=3;
+      }
     Serial.println(data);
     data="";
     delay(10);
     String Header=split_String(incoming,' ',0);
-    Serial.println(Header);
-    if (Header=="GPS"){
-      sendMessage("I Recieved GPS Packet");
-    }
-    else if (Header=="RFID"){
-      sendMessage("Mohit Sonesh");
+    
+    if (Header=="RFID"){
+      String rid1 =split_String(incoming,' ',1);
+      String rid2 =split_String(incoming,' ',2); 
+      if (rid1==" " or rid2==" "){
+        Serial.print("No RFID Number");
+        }
+      else if (rid1=="43" and rid2=="99") {
+        sendMessage("Mohit");
+      }
+      else if (rid1=="157" and rid2=="43"){
+        sendMessage("Sonesh");
+        }
+      else if (rid1=="160" and rid2=="49"){
+        sendMessage("Rahul");
+      }
+      else if (rid1=="40" and rid2=="27"){
+        sendMessage("Karan");
+        }
+      else {
+        sendMessage("Unknown Card");
+        }
     }
     
     return;
