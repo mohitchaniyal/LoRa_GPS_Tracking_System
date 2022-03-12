@@ -1,8 +1,12 @@
-import time 
+from time import strftime
 import serial
 import serial.tools.list_ports
 import sys
 import atexit
+import MySQLdb
+from time import strftime
+import mysql.connector
+from mysql.connector import Error
 print("=== Auto scan for Lora port===")
 
 def findLoraPort():
@@ -30,7 +34,9 @@ if not LoraPort:
 
 print("Lora found: " + LoraPort)
 ser = serial.Serial(LoraPort, 9600,timeout=1)
-li=[]
+db = MySQLdb.connect(host="localhost",user="root",passwd="root",db="Lora")
+
+cur = db.cursor()
 while True:
    rec_data=ser.readline().decode("utf-8")[:-2]
    if rec_data:
