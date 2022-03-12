@@ -37,25 +37,25 @@ void setup() {
     while (true);                       // if failed, do nothing
   }
 
-    byte incomingLength = LoRa.read();    // incoming msg length
+  byte incomingLength = LoRa.read();    // incoming msg length
 
-    String incoming = "";
+  String incoming = "";
 
-    while (LoRa.available()) {
-      incoming += (char)LoRa.read();
-    }
+  while (LoRa.available()) {
+    incoming += (char)LoRa.read();
+  }
 
-    if (incomingLength != incoming.length()) {   // check length for error
-      Serial.println("error: message length does not match length");
-      sent = false;
-      return;
-      // skip rest of function
-    }
-    data +=incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
-    Serial.println(data);
-    data="";
-    
+  if (incomingLength != incoming.length()) {   // check length for error
+    Serial.println("error: message length does not match length");
+    sent = false;
     return;
+    // skip rest of function
+  }
+  data += incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+  Serial.println(data);
+  data = "";
+
+  return;
   //Serial.println("LoRa init succeeded.");
 }
 
@@ -64,10 +64,10 @@ void setup() {
 
 
 void loop() {
-    onReceive(LoRa.parsePacket());
-    
-    
-  }
+  onReceive(LoRa.parsePacket());
+
+
+}
 
 
 
@@ -110,45 +110,59 @@ void onReceive(int packetSize) {
       return;
       // skip rest of function
     }
-    String node_name=String(sender,HEX);
-    data +=node_name+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
-    if (node_name=="a1"){
-      idno=1;
-      }
-    else if (node_name=="a2"){
-      idno=2;
-      }
-    else if (node_name=="a3"){
-      idno=3;
-      }
-    Serial.println(data);
-    data="";
-    delay(10);
-    String Header=split_String(incoming,' ',0);
+    String node_name = String(sender, HEX);
     
-    if (Header=="RFID"){
-      String rid1 =split_String(incoming,' ',1);
-      String rid2 =split_String(incoming,' ',2); 
-      if (rid1==" " or rid2==" "){
+    if (node_name == "a1") {
+      idno = 1;
+    }
+    else if (node_name == "a2") {
+      idno = 2;
+    }
+    else if (node_name == "a3") {
+      idno = 3;
+    }
+    Serial.println(data);
+    data = "";
+    delay(10);
+    String Header = split_String(incoming, ' ', 0);
+
+    if (Header == "RFID") {
+      String rid1 = split_String(incoming, ' ', 1);
+      String rid2 = split_String(incoming, ' ', 2);
+      if (rid1 == " " or rid2 == " ") {
         Serial.print("No RFID Number");
-        }
-      else if (rid1=="43" and rid2=="99") {
+      }
+      else if (rid1 == "43" and rid2 == "99") {
         sendMessage("Mohit");
+        data +=  node_name + " " +"Mohit"+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+        Serial.println(data);
       }
-      else if (rid1=="157" and rid2=="43"){
+      else if (rid1 == "157" and rid2 == "43") {
         sendMessage("Sonesh");
-        }
-      else if (rid1=="160" and rid2=="49"){
-        sendMessage("Rahul");
+        data += node_name + " " +"Sonesh"+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+        Serial.println(data);
       }
-      else if (rid1=="40" and rid2=="27"){
-        sendMessage("Karan");
-        }
+      else if (rid1 == "160" and rid2 == "49") {
+        sendMessage("Yogesh");
+        data += node_name + " " +"Yogesh"+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+        Serial.println(data);
+      }
+      else if (rid1 == "40" and rid2 == "27") {
+        sendMessage("Hana");
+        data += node_name + " " + "Hana"+" "+incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+        Serial.println(data);
+      }
       else {
         sendMessage("Unknown Card");
-        }
+        data += node_name + " " +"UnknownCard"+" "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+        Serial.println(data);
+      }
+      
     }
-    
+    if (Header=="GPS"){
+      data += node_name + " "+ incoming + " " + "Length " + String(incomingLength) + "RSSI " + String(LoRa.packetRssi());
+      Serial.println(data);
+      }
     return;
   }
   else return;
@@ -156,17 +170,17 @@ void onReceive(int packetSize) {
 }
 String split_String(String data, char separator, int index)
 {
-    int found = 0;
-    int strIndex[] = { 0, -1 };
-    int maxIndex = data.length() - 1;
+  int found = 0;
+  int strIndex[] = { 0, -1 };
+  int maxIndex = data.length() - 1;
 
-    for (int i = 0; i <= maxIndex && found <= index; i++) {
-        if (data.charAt(i) == separator || i == maxIndex) {
-            found++;
-            strIndex[0] = strIndex[1] + 1;
-            strIndex[1] = (i == maxIndex) ? i+1 : i;
-        }
+  for (int i = 0; i <= maxIndex && found <= index; i++) {
+    if (data.charAt(i) == separator || i == maxIndex) {
+      found++;
+      strIndex[0] = strIndex[1] + 1;
+      strIndex[1] = (i == maxIndex) ? i + 1 : i;
     }
-    
-    return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
+  }
+
+  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
