@@ -3,7 +3,10 @@ from SX127x.LoRa import *
 from SX127x.board_config import BOARD
 
 BOARD.setup()
-
+local_address="FF"
+Nodes=["A1","A2","A3","A4"]
+dtype=["RFID","GPS","GACK","RACK"]
+destination=' '
 class LoRaRcvCont(LoRa):
     def __init__(self, verbose=False):
         super(LoRaRcvCont, self).__init__(verbose)
@@ -21,13 +24,34 @@ class LoRaRcvCont(LoRa):
             
 
     def on_rx_done(self):
-        print("\nReceived: ")
         self.clear_irq_flags(RxDone=1)
         payload = self.read_payload(nocheck=True)
-        print(bytes(payload).decode("utf-8",'ignore'))
+        data=bytes(payload).decode("utf-8",'ignore')
+        print(data)
+        data_list=data.split()
         self.set_mode(MODE.SLEEP)
         self.reset_ptr_rx()
-        self.set_mode(MODE.RXCONT) 
+        self.set_mode(MODE.RXCONT)
+        if data_list[0]==local_address:
+            
+            destination=data_list[1]
+            if data_list[2]=="GPS":
+                self.send_data("{} {} {}".format(destination,local_address,dtype[2]))
+            elif data_list[2]=="RFID":
+                if data_list[3]=="54" and data_list[4]=="227" and data_list[5]=="157" and data_list[6]=="43":
+                    self.send_data("{} {} {} {}".format(destination,local_address,dtype[0],"Sonesh"))
+                elif data_list[3]=="98" and data_list[4]=="150" and data_list[5]=="40" and data_list[6]=="27":
+                    self.send_data("{} {} {} {}".format(destination,local_address,dtype[0],"Karan"))
+    def send_data(self,text):
+        print(text)
+        ascii_data=[]
+        for char in text :
+            ascii_data.append(ord(char))
+        self.write_payload(ascii_data)
+        self.set_mode(MODE.TX)
+        sleep(.5)
+        self.reset_ptr_rx()
+        self.set_mode(MODE.RXCONT)
 
 lora = LoRaRcvCont(verbose=False)
 lora.set_mode(MODE.STDBY)
