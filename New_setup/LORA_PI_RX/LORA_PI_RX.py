@@ -1,6 +1,9 @@
 from time import sleep
 from SX127x.LoRa import *
 from SX127x.board_config import BOARD
+import mysql.connector 
+
+import sys
 
 BOARD.setup()
 local_address="FF"
@@ -12,6 +15,11 @@ class LoRaRcvCont(LoRa):
         super(LoRaRcvCont, self).__init__(verbose)
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
+        
+        self.connection = mysql.connector.connect(host="localhost",user="phpmyadmin",passwd="chaniyal",db="LoRa" )
+        self.cursor = self.connection.cursor()
+            
+        
 
     def start(self):
         self.reset_ptr_rx()
@@ -38,10 +46,12 @@ class LoRaRcvCont(LoRa):
             if data_list[2]=="GPS":
                 self.send_data("{} {} {}".format(destination,local_address,dtype[2]))
             elif data_list[2]=="RFID":
-                if data_list[3]=="54" and data_list[4]=="227" and data_list[5]=="157" and data_list[6]=="43":
-                    self.send_data("{} {} {} {}".format(destination,local_address,dtype[0],"Sonesh"))
-                elif data_list[3]=="98" and data_list[4]=="150" and data_list[5]=="40" and data_list[6]=="27":
-                    self.send_data("{} {} {} {}".format(destination,local_address,dtype[0],"Karan"))
+                rfid_no=(data_list[3]+' '+  data_list[4]+' '+ data_list[5]+' '+  data_list[6],)
+                q="""select User_name,RFID from user where RFID=%s"""
+                data=self.query(q,rfid_no)
+                print(data)
+                self.send_data("{} {} {} {}".format(destination,local_address,dtype[0],data[0][0]))
+                
     def send_data(self,text):
         print(text)
         ascii_data=[]
@@ -52,7 +62,12 @@ class LoRaRcvCont(LoRa):
         sleep(.5)
         self.reset_ptr_rx()
         self.set_mode(MODE.RXCONT)
-
+    
+    def query(self,command,data):
+        self.cursor.execute(command,data)
+        results=self.cursor.fetchall()
+        self.connection.commit()
+        return results
 lora = LoRaRcvCont(verbose=False)
 lora.set_mode(MODE.STDBY)
 
@@ -71,3 +86,5 @@ finally:
     print("")
     lora.set_mode(MODE.SLEEP)
     BOARD.teardown()
+    lora.connection.close()
+    
