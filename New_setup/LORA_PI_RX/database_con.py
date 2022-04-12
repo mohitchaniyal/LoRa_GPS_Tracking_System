@@ -1,11 +1,11 @@
 import mysql.connector
 
-connection = mysql.connector.connect(host="localhost",user="phpmyadmin",passwd="chaniyal",db="LoRa_DB" )
+connection = mysql.connector.connect(host="localhost",user="phpmyadmin",passwd="chaniyal",db="LoRa" )
 cursor = connection.cursor()
 
 
 def query(command):
-    cursor.execute(command,data)
+    cursor.execute(command)
     results=cursor.fetchall()
     connection.commit()
     return results
@@ -19,20 +19,27 @@ UserRecord="""CREATE TABLE user(
     PRIMARY KEY(Id),
     UNIQUE (RFID)
 )"""
-query(UserRecord)
-while True:
-    i=input('con')
-    ide=1
-    uname=input('uname')
-    rfid=input('rfid')
-    bal=int(input('bal'))
-    data=(ide,uname,rfid,bal)
-    insert_UR="""INSERT INTO user VALUES(%s,%s,%s,%s)"""
-    res=query(insert_UR,data)
-    ide=ide+1
-    data=()
-    print(res)
-    if i=='n':
-        break
+GPSRecord="""CREATE TABLE gps_record(
+    Timestamp timestamp NOT NULL,
+    Latitude float(10) NOT NULL ,
+    Longitude float(10) NOT NULL 
+);"""
+Card_Scanned="""CREATE TABLE card_scanned(
+    Transaction_ID int(20) AUTO_INCREMENT ,
+    RFID varchar(20) NOT NULL ,
+    Latitude float(10) NOT NULL ,
+    Longitude float(10) NOT NULL ,
+    node_id varchar(5) NOT NULL,
+    Timestamp timestamp NOT NULL,
+    PRIMARY KEY(Transaction_ID))"""
+    
+live_custmer="""Create Table live_custmer(
+        RFID varchar(20) NOT NULL ,
+        Latitude float(10) NOT NULL ,
+        Longitude float(10) NOT NULL ,
+        PRIMARY KEY(RFID)
+        )"""
+res=query(Card_Scanned)
+print(res)
 
 connection.close()
