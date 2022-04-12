@@ -1,0 +1,46 @@
+    1  ip -bf a
+    2  ip -br a
+    3  cd /etc/apt//apt.conf.d/
+    4  ls
+    5  sudo gedit 10proxy
+    6  sudo mousepad 10proxy
+    7  ping google.com
+    8  apt install idle
+    9  sudo apt install idele
+   10  sudo apt install idle
+   11  sudo apt update
+   12  sudo apt upgrade
+   13  sudo raspi-config nonint do_spi 0
+   14  sudo apt-get install python-dev python3-dev
+   15  pip install RPi.GPIO
+   16  sudo apt-get install python-pip python3-pip
+   17  [200~pip install spidev~
+   18  pip install spidev
+   19  sudo apt-get install python-rpi.gpio python3-rpi.gpio
+   20  sudo apt-get install python-spidev python3-spidev
+   21  sudo apt-get install git
+   22  ls
+   23  sshkey-gen
+   24  sshkeyygen
+   25  ssh-keygen
+   26  cat ./ssh/?
+   27  cat ./ssh
+   28  ls
+   29  cat .ssh/id_rsa.pub 
+   30  git add
+   31  ls
+   32  cd Desktop/
+   33  ls
+   34  git init
+   35  git config
+   36  git
+   37  git status
+   38  git clone git@github.com:mohitchaniyal/LoRa_GPS_Tracking_System.git
+   39  ls
+   40  cd Lor
+   41  cd LoRa_GPS_Tracking_System/
+   42  ls
+   43  cd New_setup/
+   44  ls
+   45  history
+   46  history > commands.txt
