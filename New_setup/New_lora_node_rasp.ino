@@ -27,7 +27,7 @@ char lg[10];             // longitude array original=20
 void Receive_GPS_Data();
 String outgoing;              // outgoing message
 int recipient;
-String localAddress = "A1";     // address of this device
+String localAddress = "A2";     // A1,A2,A3...An
 String destination = "FF";      // destination to send to
 byte ackF = 0xF1;
 long lastSendTime = 0;        // last send time
@@ -55,7 +55,7 @@ void setup() {
   display.clearDisplay();
   display.display();
   display.setTextColor(WHITE); // or BLACK);
-  display.setTextSize(2);
+  display.setTextSize(1);
   display.setCursor(10,0); 
   display.print("Scan Now");
   display.display();
@@ -78,7 +78,7 @@ void loop() {
 void  send_GPS_Data(){
   Receive_GPS_Data();
   finish = 0; pos_cnt = 0;
-  outgoing =localAddress+" " +destination+" " +"GPS "+ String(lat) + " " + String(lg);
+  outgoing =destination+" " +localAddress+" " +"GPS "+ String(lat) + " " + String(lg);
   incomingLength = outgoing.length();
   Serial.println(outgoing);
   LoRa.beginPacket();
@@ -92,7 +92,7 @@ void  send_GPS_Data(){
 void send_RFID() {
   Receive_GPS_Data();
   finish = 0; pos_cnt = 0;
-  outgoing=localAddress+" "+destination+" "+"RFID"+uidString+" "+String(lat) + " " +String(lg); //String(lat) + " " +String(lg)
+  outgoing=destination+" "+localAddress+" "+"RFID"+uidString+" "+String(lat) + " " +String(lg); //String(lat) + " " +String(lg)
   incomingLength=outgoing.length();
   Serial.println(outgoing);//adf
   LoRa.beginPacket();
@@ -110,11 +110,22 @@ void onReceive(int packetSize) {
   while (LoRa.available()) {
     incoming += (char)LoRa.read();
   }
-  String type=getValue(incoming,' ',0);
-  String data=getValue(incoming,' ',1);
-  if (type=="User"){
-    clearUID("UserName",10,0);
-    printUID(String(data));}
+  //Serial.println(incoming);
+  String src=getValue(incoming,' ',0);
+  String dest=getValue(incoming,' ',1);
+  String type=getValue(incoming,' ',2);
+  if( src==localAddress){
+    Serial.println(incoming);
+    if (type=="RFID"){
+      String uname=getValue(incoming,' ',3)+' '+ getValue(incoming,' ',4);
+      String Bal="Balance : "+String(getValue(incoming,' ',5));
+      Serial.println(Bal);
+      clearUID(uname,5,2);
+      printUID(Bal);}
+    }
+ // if (type=="User"){
+   // clearUID("UserName",10,0);
+  //  printUID(String(data));}
   
 }
 
@@ -184,7 +195,7 @@ void readRFID()
     display.clearDisplay();
     display.display();
     display.setTextColor(WHITE); // or BLACK);
-    display.setTextSize(2);
+    display.setTextSize(1);
     display.setCursor(x,y); 
     display.print(text);
     display.display();
@@ -193,7 +204,7 @@ void readRFID()
   {
     display.setTextColor(WHITE); // or BLACK);
     display.setTextSize(1);
-    display.setCursor(30,20); 
+    display.setCursor(5,20); 
     display.print(text);
     display.display();
   }
